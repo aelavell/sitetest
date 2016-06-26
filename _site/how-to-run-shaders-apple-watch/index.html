@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>How to Run Shaders on Apple Watch OS 3 – Allan Lavell – </title>
+
+        <meta charset="utf-8" />
+    <meta content='text/html; charset=utf-8' http-equiv='Content-Type'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
+
+    
+    <meta name="description" content="I’ve wanted to write visualizations for Apple Watch since it was announced. WatchOS 1 &amp; 2 only offered us GIF support - not too much we could do with that. With the introduction of watchOS 3, the Apple Watch hardware is finally starting to become truly accessible to developers - including shaders!
+
+" />
+    <meta property="og:description" content="I’ve wanted to write visualizations for Apple Watch since it was announced. WatchOS 1 &amp; 2 only offered us GIF support - not too much we could do with that. With the introduction of watchOS 3, the Apple Watch hardware is finally starting to become truly accessible to developers - including shaders!
+
+" />
+    
+    <meta name="author" content="Allan Lavell" />
+
+    
+    <meta property="og:title" content="How to Run Shaders on Apple Watch OS 3" />
+    <meta property="twitter:title" content="How to Run Shaders on Apple Watch OS 3" />
+    
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="alternate" type="application/rss+xml" title="Allan Lavell - " href="/feed.xml" />
+
+    <!-- Created with Jekyll Now - http://github.com/barryclark/jekyll-now -->
+  </head>
+
+  <body>
+    <div class="wrapper-masthead">
+      <div class="container">
+        <header class="masthead clearfix">
+          <a href="/" class="site-avatar"><img src="https://pbs.twimg.com/profile_images/712287065375793152/I95rht3M.jpg" /></a>
+
+          <div class="site-info">
+            <h1 class="site-name"><a href="/">Allan Lavell</a></h1>
+            <p class="site-description">Co-Creator of <a href="http://hyperspektiv.com" target="_blank">Hyperspektiv</a> + <a href="http://glitchwizard.com" target="_blank">Glitch Wizard</a> ᗑᗑᗑ iOS Developer </p>
+          </div>
+
+<!--
+          <nav>
+            <a href="/">Blog</a>
+            <a href="/about">About</a>
+          </nav>
+-->
+        </header>
+      </div>
+    </div>
+
+    <div id="main" role="main" class="container">
+      <article class="post">
+  <h1>How to Run Shaders on Apple Watch OS 3</h1>
+
+
+  <div class="entry">
+    <p>I’ve wanted to write visualizations for Apple Watch since it was announced. WatchOS 1 &amp; 2 only offered us GIF support - not too much we could do with that. With the introduction of watchOS 3, the Apple Watch hardware is finally starting to become truly accessible to developers - including shaders!</p>
+
+<p>This post will explain how to get the following shader demo running on your very own Apple Watch:</p>
+
+<div class="embed twitter"><blockquote class="twitter-tweet" align="center"><p lang="en" dir="ltr">got an OpenGL shader running on WatchOS 3 ⌚️🔮 <a href="https://twitter.com/hashtag/wwdc2016?src=hash">#wwdc2016</a> <a href="https://twitter.com/hashtag/yolo?src=hash">#yolo</a> modified a <a href="https://twitter.com/yancyway">@yancyway</a> original from ShaderToy <a href="https://t.co/dvyMXvAybG">pic.twitter.com/dvyMXvAybG</a></p>&mdash; Allan Lavell (@allanlavell) <a href="https://twitter.com/allanlavell/status/743626914221305856">June 17, 2016</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script></div>
+
+<h3 id="its-all-about-spritekit">It’s all about SpriteKit</h3>
+
+<p>In the new update, Apple Watch gained access to much of SpriteKit - including the SKShader class. I set up a minimal Xcode project that serves as a starting point to get a shader running on the watch.</p>
+
+<p><a href="https://github.com/thinkrad/ShaderDemoWatchOS3">Download the Xcode project on Github</a></p>
+
+<p>In order to follow along, you’re going to need the Xcode 8 beta. The simulator actually does a half decent job of rendering the graphics - so you don’t even need to have actual hardware to test on! Bear in mind it will be slower on the simulator than on the actual hardware. If you want to run it on real hardware, you’re going to need to install iOS 10 beta on your iPhone, as well as the Watch OS 3 beta on your Watch.</p>
+
+<h3 id="setting-the-scene">Setting the Scene</h3>
+
+<p>The main setup occurs in ShaderScene.swift:</p>
+
+<figure class="highlight"><pre><code class="language-swift" data-lang="swift">    <span class="k">override</span> <span class="kd">func</span> <span class="nf">sceneDidLoad</span><span class="p">()</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="nv">texture</span> <span class="o">=</span> <span class="kt">SKTexture</span><span class="p">(</span><span class="nv">imageNamed</span><span class="p">:</span> <span class="nf">is42mmWatch</span><span class="p">()</span> <span class="p">?</span> <span class="s">"bg42.png"</span> <span class="p">:</span> <span class="s">"bg.png"</span><span class="p">)</span>
+        <span class="k">let</span> <span class="nv">shaderSprite</span> <span class="o">=</span> <span class="kt">SKSpriteNode</span><span class="p">(</span><span class="nv">texture</span><span class="p">:</span> <span class="n">texture</span><span class="p">,</span> <span class="nv">size</span><span class="p">:</span> <span class="nf">is42mmWatch</span><span class="p">()</span> <span class="p">?</span> <span class="kt">CGSize</span><span class="p">(</span><span class="nv">width</span><span class="p">:</span> <span class="mi">312</span><span class="p">,</span> <span class="nv">height</span><span class="p">:</span> <span class="mi">390</span><span class="p">)</span> <span class="p">:</span> <span class="kt">CGSize</span><span class="p">(</span><span class="nv">width</span><span class="p">:</span> <span class="mi">272</span><span class="p">,</span> <span class="nv">height</span><span class="p">:</span> <span class="mi">320</span><span class="p">))</span>
+        
+        <span class="n">shaderSprite</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="k">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">shaderSprite</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="kt">CGPoint</span><span class="p">(</span><span class="nv">x</span><span class="p">:</span> <span class="k">self</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">width</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="nv">y</span><span class="p">:</span> <span class="k">self</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">height</span><span class="o">/</span><span class="mi">2</span><span class="p">);</span>
+        <span class="nf">addChild</span><span class="p">(</span><span class="n">shaderSprite</span><span class="p">)</span>
+        
+        <span class="k">let</span> <span class="nv">shader</span> <span class="o">=</span> <span class="kt">SKShader</span><span class="p">(</span><span class="nv">fileNamed</span><span class="p">:</span> <span class="s">"ecophon.fsh"</span><span class="p">)</span>
+
+        <span class="n">shaderSprite</span><span class="o">.</span><span class="n">shader</span> <span class="o">=</span> <span class="n">shader</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>Basically all we’re doing here is:</p>
+
+<ol>
+  <li>Making a sprite with a screen-sized texture</li>
+  <li>Adding a shader to it</li>
+  <li>Placing it in the scene</li>
+</ol>
+
+<p>The shader I’m demoing is generative (it’s not actually taking color input from the texture), so I’m just passing in a dummy texture - all white, in this case. There might be a way of doing this without even passing in a texture - but this way works, and gives the correct size info to the shader.</p>
+
+<h3 id="the-shader-itself">The Shader itself</h3>
+
+<p>I went digging through ShaderToy, and found <a href="https://www.shadertoy.com/view/Mt2Gzz">this excellent shader</a> from internet graphics wizard <a href="https://twitter.com/@yancyway">Yancy Way</a>. I modified it slightly from its original form - substituting some system provided variables (iGlobalTime becomes u_time, for example). The documentation for these variables can be found on the <a href="https://developer.apple.com/library/ios/documentation/SpriteKit/Reference/SKShader_Ref/index.html#//apple_ref/occ/cl/SKShader">SKShader page</a>. I also messed with a couple of the magic numbers that make the whole thing tick. Here’s the result:</p>
+
+<figure class="highlight"><pre><code class="language-glsl" data-lang="glsl"><span class="cp">#define t u_time
+#define r vec2(272., 320.)
+</span>
+<span class="kt">void</span> <span class="n">main</span><span class="p">(</span><span class="kt">void</span><span class="p">){</span>
+    <span class="kt">vec3</span> <span class="n">c</span><span class="p">;</span>
+    <span class="kt">float</span> <span class="n">l</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">t</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">//vec2 uv, p = gl_FragCoord.xy / size.xy;
+</span>        <span class="kt">vec2</span> <span class="n">uv</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">v_tex_coord</span><span class="p">;</span>
+        <span class="n">uv</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
+        <span class="n">p</span> <span class="o">-=</span> <span class="p">.</span><span class="mi">5</span><span class="p">;</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">x</span> <span class="o">*=</span> <span class="n">r</span><span class="p">.</span><span class="n">x</span> <span class="o">/</span> <span class="n">r</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">y</span> <span class="o">*=</span> <span class="mi">0</span><span class="p">.</span><span class="mo">05</span><span class="p">;</span>
+        <span class="n">z</span> <span class="o">*=</span> <span class="mi">0</span><span class="p">.</span><span class="mi">5</span><span class="p">;</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="mi">0</span><span class="p">.</span><span class="mi">5</span><span class="p">)</span> <span class="o">*</span> <span class="mi">0</span><span class="p">.</span><span class="mi">5</span><span class="p">;</span>
+        <span class="n">uv</span> <span class="o">-=</span> <span class="n">p</span> <span class="o">/</span> <span class="n">l</span> <span class="o">*</span> <span class="p">(</span><span class="n">sin</span><span class="p">(</span><span class="n">z</span><span class="p">))</span> <span class="o">*</span> <span class="n">abs</span><span class="p">(</span><span class="n">sin</span><span class="p">(</span><span class="n">l</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">.</span> <span class="o">+</span> <span class="n">sin</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="n">z</span> <span class="o">*</span> <span class="mi">2</span><span class="p">.));</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">.</span><span class="mo">005</span> <span class="o">/</span> <span class="n">length</span><span class="p">(</span><span class="n">abs</span><span class="p">(</span><span class="n">mod</span><span class="p">(</span><span class="n">uv</span><span class="p">,</span> <span class="mi">1</span><span class="p">.)</span> <span class="o">-</span> <span class="mi">0</span><span class="p">.</span><span class="mi">5</span><span class="p">));</span>
+    <span class="p">}</span>
+    <span class="nb">gl_FragColor</span> <span class="o">=</span> <span class="kt">vec4</span><span class="p">(</span><span class="n">c</span><span class="o">/</span><span class="n">l</span><span class="p">,</span><span class="n">t</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This is the echophon.fsh file, as referenced in ShaderScene.swift. Write your own shaders and swap them in!</p>
+
+<h3 id="thats-it">That’s it.</h3>
+
+<p>It’s pretty simple. There’s definitely a bit more boilerplate we could add to make the setup even nicer (sending values to your shaders from code, for example), but I’ll let you explore that for yourself. Feel free to send pull requests if you have anything to add!</p>
+
+  </div>
+
+  <div class="date">
+    Written on June 26, 2016 <br />
+  </div>
+
+  <div class="follow">
+    <a href="https://twitter.com/@allanlavell">@allanlavell</a> 
+  </div>
+
+  <div class="app">
+    <a href="http://hyperspektiv.com" target="_blank"><img class="app-icon" src="../images/hyperspektiv-icon.png"></img></a>
+    <a href="http://glitchwizard.com" target="_blank"><img class="app-icon" src="../images/glitchwizard-icon.png"></img></a>
+  </div>
+
+  
+</article>
+
+    </div>
+
+<!--
+    <div class="wrapper-footer">
+      <div class="container">
+        <footer class="footer">
+          
+
+
+
+<a href="https://github.com/thinkrad"><i class="svg-icon github"></i></a>
+
+
+
+
+<a href="https://www.twitter.com/allanlavell"><i class="svg-icon twitter"></i></a>
+
+
+
+        </footer>
+      </div>
+    </div>
+-->
+
+    
+	<!-- Google Analytics -->
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		ga('create', 'UA-40310827-1', 'auto');
+		ga('send', 'pageview', {
+		  'page': '/how-to-run-shaders-apple-watch/',
+		  'title': 'How to Run Shaders on Apple Watch OS 3'
+		});
+	</script>
+	<!-- End Google Analytics -->
+
+
+  </body>
+</html>
